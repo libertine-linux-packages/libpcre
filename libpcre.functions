@@ -1,0 +1,71 @@
+# This file is part of libertine linux's package libressl. It is subject to the license terms in the COPYRIGHT file found in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/libressl/master/COPYRIGHT. No part of libertine linux's package libressl, including this file, may be copied, modified, propagated, or distributed except according to the terms contained in the COPYRIGHT file.
+# Copyright © 2016 The developers of libertine linux's package libressl. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/libressl/master/COPYRIGHT.
+
+
+variant=upstream
+
+depends build_ccache
+build_needs ccache
+
+depends build_gnumake
+build_needs make
+
+depends build_cmake
+build_needs cmake
+
+depends build_busybox
+
+_libertine_compile_libpcre()
+{
+	pushd "$(libertine_public_sourcePath)"
+		
+		# PCRE_SUPPORT_LIBBZ2/LIBZ/LIBEDIT/LIBREADLINE are only for pcregrep, which we don't build
+		libertine_public_cmake \
+			-DPCRE_BUILD_PCRE8:BOOL=ON \
+			-DPCRE_BUILD_PCRE16:BOOL=ON \
+			-DPCRE_BUILD_PCRE32:BOOL=ON \
+			-DPCRE_SHOW_REPORT:BOOL=ON \
+			-DPCRE_BUILD_PCREGREP:BOOL=OFF \
+			-DPCRE_BUILD_TESTS:BOOL=OFF \
+			-DPCRE_SUPPORT_LIBBZ2:BOOL=OFF \
+			-DPCRE_SUPPORT_LIBZ:BOOL=OFF \
+			-DPCRE_SUPPORT_LIBEDIT:BOOL=OFF \
+			-DPCRE_SUPPORT_LIBREADLINE:BOOL=OFF \
+			-DPCRE_REBUILD_CHARTABLES:BOOL=OFF
+		
+		pushd .libertine-cmake-build
+			
+			libertine_public_make VERBOSE=1
+			
+			libertine_public_make DESTDIR="$(libertine_public_outputHostSysrootPath)" install
+			
+		popd
+
+	popd
+}
+
+case "$package" in
+	
+	build_libpcre)
+		
+		depends build_musl_cross_make_build
+		build_needs "$libertine_build"-cc "$libertine_build"-c++ "$libertine_build"-ar "$libertine_build"-ld "$libertine_build"-ranlib
+		
+		libertine_compile_build_libpcre()
+		{
+			_libertine_compile_libpcre
+		}
+	;;
+	
+	libpcre)
+
+		depends build_musl_cross_make_host
+		build_needs "$libertine_host"-cc "$libertine_host"-c++ "$libertine_host"-ar "$libertine_host"-ld "$libertine_host"-ranlib
+		
+		libertine_compile_libpcre()
+		{
+			_libertine_compile_libpcre
+		}
+	;;
+	
+esac
