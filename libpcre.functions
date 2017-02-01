@@ -1,5 +1,5 @@
-# This file is part of libertine linux's package libressl. It is subject to the license terms in the COPYRIGHT file found in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/libressl/master/COPYRIGHT. No part of libertine linux's package libressl, including this file, may be copied, modified, propagated, or distributed except according to the terms contained in the COPYRIGHT file.
-# Copyright © 2016 The developers of libertine linux's package libressl. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/libressl/master/COPYRIGHT.
+# This file is part of libertine linux's package libpcre. It is subject to the license terms in the COPYRIGHT file found in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/libpcre/master/COPYRIGHT. No part of libertine linux's package libpcre, including this file, may be copied, modified, propagated, or distributed except according to the terms contained in the COPYRIGHT file.
+# Copyright © 2016 The developers of libertine linux's package libpcre. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/libpcre/master/COPYRIGHT.
 
 
 variant=upstream
@@ -15,8 +15,11 @@ build_needs cmake
 
 depends build_busybox
 
+build_needs mkdir cat chmod
 _libertine_compile_libpcre()
 {
+	local isForBuild="$1"
+	
 	pushd "$(libertine_public_sourcePath)"
 		
 		# PCRE_SUPPORT_LIBBZ2/LIBZ/LIBEDIT/LIBREADLINE are only for pcregrep, which we don't build
@@ -42,6 +45,118 @@ _libertine_compile_libpcre()
 		popd
 
 	popd
+	
+	local sysrootFolderPath
+	if $isForBuild; then
+		sysrootFolderPath="$(libertine_public_outputBuildSysrootPath)"
+	else
+		sysrootFolderPath="$(libertine_public_outputHostSysrootPath)"
+	fi
+	
+	mkdir -m 0755 -p "$sysrootFolderPath"/usr/bin
+	
+	pushd "$sysrootFolderPath"/usr/bin
+		
+		{
+			cat <<-EOF
+				#!$(libertine_public_buildNeedsPath)/sh
+				# Of course, if the below contains a single quote, this doesn't work
+				hostSysrootPath='$sysrootFolderPath'
+			EOF
+			cat <<-'EOF'
+				# This file is part of libertine linux's package libpcre. It is subject to the licence terms in the COPYRIGHT file found in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/libertine/master/COPYRIGHT. No part of libertine linux's package libpcre, including this file, may be copied, modified, propagated, or distributed except according to the terms contained in the COPYRIGHT file.
+				# Copyright © 2016 The developers of libertine linux's package libpcre. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/libertine-linux-packages/libertine/master/COPYRIGHT.
+			
+			
+				set -u
+				set -e
+				set -f
+				
+				atLeastOneFlagWritten=false
+				addToFlags()
+				{
+					local argument
+					for argument in "$@"
+					do
+						if $atLeastOneFlagWritten; then
+							printf ' '
+						else
+							atLeastOneFlagWritten=true
+						fi
+						printf '%s' "$argument"
+					done
+				}
+			
+				doesNotHaveIncludeFolderPath=true
+				includeFolderPath="$hostSysrootPath"/usr/include
+				addToFlagsIncludeFolderPath()
+				{
+					if $doesNotHaveIncludeFolderPath; then
+						addToFlags -I"$includeFolderPath"
+						doesNotHaveIncludeFolderPath=false
+					fi
+				}
+			
+				doesNotHaveLibFolderPath=true
+				libFolderPath="$hostSysrootPath"/usr/lib
+				addToFlagsLibFolderPath()
+				{
+					if $doesNotHaveLibFolderPath; then
+						addToFlags -L"$libFolderPath"
+						doesNotHaveLibFolderPath=false
+					fi
+				}
+			
+				for argument in "$@"
+				do
+					case "$argument" in
+					
+						--cflags)
+							addToFlagsIncludeFolderPath
+						;;
+					
+						--cflags-posix)
+							addToFlagsIncludeFolderPath
+						;;
+					
+						--libs-posix)
+							addToFlagsLibFolderPath
+							addToFlags -lpcreposix -lpcre
+						;;
+										
+						--libs)
+							addToFlagsLibFolderPath
+							addToFlags -lpcre
+						;;
+										
+						--libs16)
+							addToFlagsLibFolderPath
+							addToFlags -lpcre16
+						;;
+										
+						--libs32)
+							addToFlagsLibFolderPath
+							addToFlags -lpcre32
+						;;
+					
+						--libs-cpp)
+							addToFlagsLibFolderPath
+							addToFlags -lpcre -lpcrecpp
+						;;
+					
+						*)
+							printf "Unsupported argument '%s'\n" "$argument" 1>&2
+							exit 1
+						;;
+				
+					esac
+				done
+			EOF
+		} >pcre-config
+		
+		chmod 0700 pcre-config
+		
+	popd
 }
 
 case "$package" in
@@ -53,7 +168,7 @@ case "$package" in
 		
 		libertine_compile_build_libpcre()
 		{
-			_libertine_compile_libpcre
+			_libertine_compile_libpcre true
 		}
 	;;
 	
@@ -64,7 +179,7 @@ case "$package" in
 		
 		libertine_compile_libpcre()
 		{
-			_libertine_compile_libpcre
+			_libertine_compile_libpcre false
 		}
 	;;
 	
