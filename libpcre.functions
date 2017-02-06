@@ -53,8 +53,52 @@ _libertine_compile_libpcre()
 		sysrootFolderPath="$(libertine_public_outputHostSysrootPath)"
 	fi
 	
-	mkdir -m 0755 -p "$sysrootFolderPath"/usr/bin
+	pushd "$sysrootFolderPath"/usr/lib
+		
+		mkdir -m 0755 pkgconfig
+		pushd pkgconfig
+			
+			local file
+			for file in pcre pcre16 pcre32 pcrecpp pcreposix
+			do
+				local prefix="$sysrootFolderPath"/usr
+				
+				local libs
+				case "$file" in
+					
+					pcrecpp)
+						libs='-L${libdir} -lpcre -lpcrecpp'
+					;;
+					
+					*)
+						libs='-L${libdir} -l'"$file"
+					;;
+					
+				esac
+				
+				local include='-I${includedir}'
+				
+				cat >lib"$file".pc <<-EOF
+					prefix=${prefix}
+					exec_prefix=${prefix}
+					libdir=${prefix}/lib
+					toolexeclibdir=${prefix}/lib
+					includedir=${prefix}/include
+					
+					Name: libpcre
+					Description: libpcre
+					Version: 8.13
+					Libs: ${libs}
+					Cflags: ${include}
+				EOF
+			done
+			
+		popd
+		
+	popd
 	
+	
+	mkdir -m 0755 -p "$sysrootFolderPath"/usr/bin
 	pushd "$sysrootFolderPath"/usr/bin
 		
 		{
