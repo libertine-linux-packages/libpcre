@@ -40,7 +40,12 @@ _libertine_compile_libpcre()
 			
 			libertine_public_make VERBOSE=1
 			
-			libertine_public_make DESTDIR="$(libertine_public_outputHostSysrootPath)" install
+			local destDir
+			if $isForBuild; then
+				libertine_public_make install
+			else
+				libertine_public_make DESTDIR="$(libertine_public_outputHostSysrootPath)" install
+			fi
 			
 		popd
 
