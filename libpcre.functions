@@ -23,7 +23,7 @@ _libertine_compile_libpcre()
 	pushd "$(libertine_public_sourcePath)"
 		
 		# PCRE_SUPPORT_LIBBZ2/LIBZ/LIBEDIT/LIBREADLINE are only for pcregrep, which we don't build
-		libertine_public_cmake \
+		libertine_public_cmake_static \
 			-DPCRE_BUILD_PCRE8:BOOL=ON \
 			-DPCRE_BUILD_PCRE16:BOOL=ON \
 			-DPCRE_BUILD_PCRE32:BOOL=ON \
