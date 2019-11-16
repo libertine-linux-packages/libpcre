@@ -2,4 +2,3 @@
 	path = upstream
 	url = https://github.com/libertine-linux-clones/pcre.git
 	branch = master
-	libertine-linux-upstream = https://github.com/svn2github/pcre.git
